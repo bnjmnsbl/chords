@@ -322,6 +322,43 @@
       overflow-x: auto;
     }
 
+    .diatonic-chords {
+      margin-top: 1rem;
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .diatonic-chord {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 6px 10px;
+      text-align: center;
+      min-width: 52px;
+    }
+
+    .diatonic-chord .dc-degree {
+      font-size: 11px;
+      color: var(--text-faint);
+      margin-bottom: 2px;
+    }
+
+    .diatonic-chord .dc-name {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text);
+    }
+
+    .diatonic-chord .dc-type {
+      font-size: 11px;
+      margin-top: 2px;
+    }
+
+    .diatonic-chord.dc-major .dc-type { color: var(--accent); }
+    .diatonic-chord.dc-minor .dc-type { color: var(--third-col); }
+    .diatonic-chord.dc-dim   .dc-type { color: var(--text-faint); }
+
     footer {
       margin-top: 2rem;
       font-size: 12px;
@@ -689,6 +726,54 @@
         return s + '</svg>';
       }
 
+      // -- diatonic chord derivation ----------------------------------------
+      // Roman numerals for 7 scale degrees
+      var ROMAN = ["I","II","III","IV","V","VI","VII"];
+      // Note names for display (prefer flats for black keys in scale context)
+      var NOTE_NAMES = ["C","C#","D","D#","E","F","F#","G","G#","A","A#","B"];
+
+      // Given a root pc and scale intervals, build diatonic triads.
+      // For each scale degree, stack 3rds (skip one scale tone) to get triad.
+      // Returns array of {degree, roman, name, chordType} or null if no complete triad.
+      function diatonicChords(rootPc, intervals) {
+        var n = intervals.length;
+        // need at least 5 tones to form a triad by stacking thirds
+        if (n < 5) return null;
+        var result = [];
+        for (var i = 0; i < n; i++) {
+          var root = (rootPc + intervals[i]) % 12;
+          // third = two scale steps up (wrap)
+          var thirdIv = intervals[(i + 2) % n];
+          if ((i + 2) >= n) thirdIv += 12; // wrap to next octave
+          var thirdInterval = thirdIv - intervals[i];
+          if (thirdInterval < 0) thirdInterval += 12;
+          // fifth = four scale steps up (wrap)
+          var fifthIv = intervals[(i + 4) % n];
+          if ((i + 4) >= n) fifthIv += 12;
+          var fifthInterval = fifthIv - intervals[i];
+          if (fifthInterval < 0) fifthInterval += 12;
+
+          var chordType;
+          if (thirdInterval === 4 && fifthInterval === 7) chordType = "major";
+          else if (thirdInterval === 3 && fifthInterval === 7) chordType = "minor";
+          else if (thirdInterval === 3 && fifthInterval === 6) chordType = "dim";
+          else if (thirdInterval === 4 && fifthInterval === 8) chordType = "aug";
+          else chordType = null;
+
+          var roman = ROMAN[i] || (i + 1).toString();
+          var nameRoman = chordType === "minor" || chordType === "dim" ? roman.toLowerCase() : roman;
+          if (chordType === "dim") nameRoman += "°";
+
+          result.push({
+            degree: i + 1,
+            roman: nameRoman,
+            name: NOTE_NAMES[root],
+            chordType: chordType
+          });
+        }
+        return result;
+      }
+
       // -- scale panel -------------------------------------------------------
       var scaleId = null;
 
@@ -728,16 +813,40 @@
         var def = scaleDefs.filter(function(d){ return d.id === scaleId; })[0];
         var displayEl = document.getElementById("scale-display");
 
+        var scaleHtml;
         if (instrument === "guitar") {
-          displayEl.innerHTML = '<div class="fretboard-wrap">' + fretboardSVG(rootPc, def.intervals) + '</div>';
+          scaleHtml = '<div class="fretboard-wrap">' + fretboardSVG(rootPc, def.intervals) + '</div>';
         } else {
-          // piano: show one octave of scale tones
           var notes = def.intervals.map(function(iv) { return rootPc + iv; });
-          // build a simple role map: root = root-col, rest = fifth-col (accent)
           var roleMap2 = {};
           notes.forEach(function(n) { roleMap2[n % 12] = n % 12 === rootPc ? "root" : "fifth"; });
-          displayEl.innerHTML = pianoSVG(notes, roleMap2);
+          scaleHtml = pianoSVG(notes, roleMap2);
         }
+
+        // diatonic chords
+        var chords = diatonicChords(rootPc, def.intervals);
+        var chordsHtml = "";
+        if (chords) {
+          var typeLabel = { major: "Dur", minor: "Moll", dim: "verm.", aug: "überm." };
+          chordsHtml = '<div class="diatonic-chords">' +
+            chords.map(function(c) {
+              var cls = c.chordType === "major" ? "dc-major"
+                      : c.chordType === "minor" ? "dc-minor"
+                      : c.chordType === "dim"   ? "dc-dim" : "dc-other";
+              var label = c.chordType ? typeLabel[c.chordType] : "—";
+              var dispName = (c.chordType === "minor" || c.chordType === "dim")
+                ? c.name.charAt(0).toLowerCase() + c.name.slice(1)
+                : c.name;
+              return '<div class="diatonic-chord ' + cls + '">' +
+                '<div class="dc-degree">' + c.roman + '</div>' +
+                '<div class="dc-name">' + dispName + '</div>' +
+                '<div class="dc-type">' + label + '</div>' +
+                '</div>';
+            }).join("") +
+          '</div>';
+        }
+
+        displayEl.innerHTML = scaleHtml + chordsHtml;
       }
 
       // -- state -----------------------------------------------------------
