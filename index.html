@@ -23,6 +23,7 @@
       /* Terz      */
       --fifth-col: #7f77dd;
       /* Quinte    */
+      --seventh-col: #c07820;
       --stencil-fill: rgba(83, 74, 183, 0.30);
       --stencil-stroke: #534ab7;
       --stencil-text: #26215c;
@@ -43,6 +44,7 @@
         --root-col: #f0997b;
         --third-col: #5dcaa5;
         --fifth-col: #afa9ec;
+        --seventh-col: #e8b06a;
         --stencil-fill: rgba(175, 169, 236, 0.22);
         --stencil-stroke: #afa9ec;
         --stencil-text: #eeedfe;
@@ -231,6 +233,16 @@
       line-height: 1;
     }
 
+    .ext-toggle {
+      display: flex;
+      gap: 6px;
+      margin-bottom: 10px;
+    }
+    .ext-toggle button {
+      font-size: 12px;
+      padding: 3px 10px;
+    }
+
     footer {
       margin-top: 2rem;
       font-size: 12px;
@@ -301,15 +313,24 @@
 
       // chord roots and triad construction
       var NOTE_IDX = { "C": 0, "C#": 1, "D": 2, "D#": 3, "E": 4, "F": 5, "F#": 6, "G": 7, "G#": 8, "A": 9, "A#": 10, "B": 11 };
+      function chordIntervals(type, ext) {
+        var base = type === "major" ? [0,4,7] : type === "minor" ? [0,3,7] : [0,3,6];
+        if (ext === "maj7")  return base.concat([11]);
+        if (ext === "m7")    return base.concat([10]);
+        if (ext === "m7b5")  return base.concat([10]);
+        return base;
+      }
       function triad(root, type) {
         var r = NOTE_IDX[root];
-        var iv = type === "major" ? [0, 4, 7] : type === "minor" ? [0, 3, 7] : [0, 3, 6];
-        return iv.map(function (s) { return (r + s) % 12; });
+        return chordIntervals(type, "triad").map(function(s){ return (r+s)%12; });
       }
-      // role of each pitch class within a chord: 1=root,3=third,5=fifth
-      function roleMap(root, type) {
-        var t = triad(root, type);
-        var m = {}; m[t[0]] = "root"; m[t[1]] = "third"; m[t[2]] = "fifth";
+      function roleMap(root, type, ext) {
+        ext = ext || "triad";
+        var r = NOTE_IDX[root];
+        var ivs = chordIntervals(type, ext);
+        var m = {};
+        var roleNames = ["root","third","fifth","seventh"];
+        ivs.forEach(function(iv, i){ m[(r+iv)%12] = roleNames[i]; });
         return m;
       }
 
@@ -352,6 +373,44 @@
         "Ddim":  [[-1,5,6,7,6,-1],[-1,5,6,7,6,-1]],
         "Adim":  [[-1,0,1,2,1,-1],[-1,0,1,2,1,-1]],
         "Edim":  [[0,1,2,0,-1,-1],[0,1,2,0,-1,-1]]
+      };
+      var GUITAR7 = {
+        "Cmaj7":  [-1,3,2,0,0,0],
+        "Gmaj7":  [3,2,0,0,0,2],
+        "Dmaj7":  [-1,-1,0,2,2,2],
+        "Amaj7":  [-1,0,2,1,2,0],
+        "Emaj7":  [0,2,1,1,0,0],
+        "Bmaj7":  [-1,2,4,3,4,2],
+        "F#maj7": [2,4,3,3,2,2],
+        "C#maj7": [-1,4,6,5,6,4],
+        "G#maj7": [4,6,5,5,4,4],
+        "D#maj7": [-1,6,8,7,8,6],
+        "A#maj7": [-1,1,3,2,3,1],
+        "Fmaj7":  [1,3,2,2,1,0],
+        "Am7":  [-1,0,2,0,1,0],
+        "Em7":  [0,2,2,0,3,0],
+        "Bm7":  [-1,2,4,2,3,2],
+        "F#m7": [2,4,2,2,2,2],
+        "C#m7": [-1,4,6,4,5,4],
+        "G#m7": [4,6,4,4,4,4],
+        "D#m7": [-1,6,8,6,7,6],
+        "A#m7": [-1,1,3,1,2,1],
+        "Fm7":  [1,3,1,1,1,1],
+        "Cm7":  [-1,3,5,3,4,3],
+        "Gm7":  [3,5,3,3,3,3],
+        "Dm7":  [-1,-1,0,2,1,1],
+        "Bm7b5":  [-1,2,3,2,3,-1],
+        "F#m7b5": [2,3,2,2,2,-1],
+        "C#m7b5": [-1,4,5,4,5,-1],
+        "G#m7b5": [4,5,4,4,4,-1],
+        "D#m7b5": [-1,6,7,6,7,-1],
+        "A#m7b5": [-1,1,2,1,2,-1],
+        "Fm7b5":  [1,2,1,1,1,-1],
+        "Cm7b5":  [-1,3,4,3,4,-1],
+        "Gm7b5":  [3,4,3,3,3,-1],
+        "Dm7b5":  [-1,-1,0,1,1,1],
+        "Am7b5":  [-1,0,1,0,1,-1],
+        "Em7b5":  [0,1,0,0,0,-1]
       };
       // standard tuning pitch classes, low E -> high e
       var STRING_PC = [4, 9, 2, 7, 11, 4];
@@ -435,6 +494,7 @@
       // -- state -----------------------------------------------------------
       var instrument = "guitar", modesOn = false, rotation = 0, lastChordEl = null;
       var voicingIndex = 0;
+      var chordExt = "triad";
 
       function updateStencil() {
         stencil.setAttribute("transform", "rotate(" + (rotation * 30) + " " + CX + " " + CY + ")");
@@ -445,15 +505,16 @@
 
       // -- guitar renderer with role colouring -----------------------------
       function roleColor(role) {
-        return role === "root" ? "var(--root-col)"
-          : role === "third" ? "var(--third-col)"
-            : "var(--fifth-col)";
+        return role === "root"    ? "var(--root-col)"
+             : role === "third"   ? "var(--third-col)"
+             : role === "seventh" ? "var(--seventh-col)"
+             : "var(--fifth-col)";
       }
       function renderGuitar(voicingArray, chord, type) {
         var v = voicingArray;
         if (!v) return "<p style='font-size:13px;color:var(--text-soft)'>Kein Griff hinterlegt.</p>";
         var rootName = chord.replace(/dim$/, "").replace(/m$/, "");
-        var roles = roleMap(rootName, type);
+        var roles = roleMap(rootName, type, chordExt);
         var W = 140, H = 160, padL = 22, padT = 26, padB = 20, nStr = 6, nFr = 5;
         var sGap = (W - 2 * padL) / (nStr - 1), fGap = (H - padT - padB) / nFr;
         var played = v.filter(function (f) { return f > 0; });
@@ -515,7 +576,10 @@
         notesOrdered.forEach(function (n) {
           var pc = n % 12, oct = Math.floor(n / 12);
           var role = roles[pc];
-          var col = role === "root" ? "var(--root-col)" : role === "third" ? "var(--third-col)" : "var(--fifth-col)";
+          var col = role === "root"    ? "var(--root-col)"
+                  : role === "third"   ? "var(--third-col)"
+                  : role === "seventh" ? "var(--seventh-col)"
+                  : "var(--fifth-col)";
           if (whitePos.hasOwnProperty(pc) || pc === 12) {
             var wi = whitePos[pc === 12 ? 12 : pc] + (pc === 12 ? 0 : oct * 7);
             if (pc !== 12) wi = whitePos[pc] + oct * 7;
@@ -530,25 +594,25 @@
         return s + '</svg>';
       }
 
-      function pianoVoicing(root, type, inversion) {
-        // returns absolute semitone positions for the requested inversion
-        var iv = type === "major" ? [0, 4, 7] : type === "minor" ? [0, 3, 7] : [0, 3, 6];
+      function pianoVoicing(root, type, inversion, ext) {
+        ext = ext || "triad";
+        var iv = chordIntervals(type, ext);
         var r = NOTE_IDX[root];
-        var notes = iv.map(function (s) { return r + s; }); // root position, may exceed 12
+        var notes = iv.map(function(s){ return r+s; });
         for (var k = 0; k < inversion; k++) {
           var low = notes.shift();
-          notes.push(low + 12);
+          notes.push(low+12);
         }
-        // normalise so the lowest note sits in octave 0..
         var min = Math.min.apply(null, notes);
-        var shift = Math.floor(min / 12) * 12;
-        return notes.map(function (n) { return n - shift; });
+        var shift = Math.floor(min/12)*12;
+        return notes.map(function(n){ return n-shift; });
       }
 
       // -- panel -----------------------------------------------------------
       function showChord(g) {
         lastChordEl = g;
         voicingIndex = 0;
+        chordExt = "triad";
         renderPanel();
       }
 
@@ -558,51 +622,85 @@
         var chord = g.getAttribute("data-chord");
         var disp  = g.getAttribute("data-disp");
         var type  = g.getAttribute("data-type");
-        var typeLabel = type === "major" ? "Durdreiklang" : type === "minor" ? "Molldreiklang" : "verminderter Dreiklang";
         var root  = chord.replace(/dim$/, "").replace(/m$/, "");
-        var roles = roleMap(root, type);
+        var roles = roleMap(root, type, chordExt);
         var panel = document.getElementById("panel");
         panel.classList.remove("empty");
+
+        var extOptions = type === "major"
+          ? [["triad","Dreiklang"],["maj7","maj7"]]
+          : type === "minor"
+          ? [["triad","Dreiklang"],["m7","m7"]]
+          : [["triad","Dreiklang"],["m7b5","m7b5"]];
+
+        var toggleHtml = '<div class="ext-toggle">' +
+          extOptions.map(function(opt) {
+            return '<button data-ext="' + opt[0] + '" class="ext-btn' + (chordExt === opt[0] ? ' active' : '') + '">' + opt[1] + '</button>';
+          }).join("") + '</div>';
+
+        var typeLabel = type === "major" ? "Durdreiklang" : type === "minor" ? "Molldreiklang" : "verminderter Dreiklang";
 
         var body = "";
         if (instrument === "guitar") {
           var voicings = GUITAR[chord] || [];
-          var v = voicings[voicingIndex] || voicings[0];
+          if (chordExt !== "triad") {
+            var g7key = chordExt === "maj7"  ? root + "maj7"
+                      : chordExt === "m7"    ? root + "m7"
+                      : root + "m7b5";
+            var g7v = GUITAR7[g7key];
+            voicings = g7v ? [g7v] : [];
+          }
+          var v = voicings[voicingIndex] || voicings[0] || null;
           var navHtml = voicings.length > 1
             ? '<div class="voicing-nav">' +
               '<button id="btn-prev-v">&#8249;</button>' +
-              '<span>' + (voicingIndex + 1) + ' / ' + voicings.length + '</span>' +
+              '<span>' + (voicingIndex+1) + ' / ' + voicings.length + '</span>' +
               '<button id="btn-next-v">&#8250;</button>' +
               '</div>'
             : '';
-          body = '<div class="voicing">' + renderGuitar(v, chord, type) + navHtml + '<div class="vlabel">Gitarrengriff</div></div>';
+          body = '<div class="voicing">' + (v ? renderGuitar(v, chord, type) : "<p style='font-size:13px;color:var(--text-soft)'>Kein Griff hinterlegt.</p>") + navHtml + '<div class="vlabel">Gitarrengriff</div></div>';
         } else {
-          var inv = [["Grundstellung", 0], ["1. Umkehrung", 1], ["2. Umkehrung", 2]];
-          body = inv.map(function(it) {
-            var notes = pianoVoicing(root, type, it[1]);
-            return '<div class="voicing">' + pianoSVG(notes, roles) + '<div class="vlabel">' + it[0] + '</div></div>';
-          }).join("");
+          var invCount = chordExt === "triad" ? 3 : 4;
+          var invLabels = ["Grundstellung","1. Umkehrung","2. Umkehrung","3. Umkehrung"];
+          body = "";
+          for (var ii = 0; ii < invCount; ii++) {
+            var notes = pianoVoicing(root, type, ii, chordExt);
+            body += '<div class="voicing">' + pianoSVG(notes, roles) + '<div class="vlabel">' + invLabels[ii] + '</div></div>';
+          }
         }
 
+        var septLegend = (chordExt !== "triad")
+          ? '<span><i class="dot" style="background:var(--seventh-col)"></i>Septime</span>'
+          : '';
         var legend = '<div class="legend">' +
           '<span><i class="dot" style="background:var(--root-col)"></i>Grundton</span>' +
           '<span><i class="dot" style="background:var(--third-col)"></i>Terz</span>' +
-          '<span><i class="dot" style="background:var(--fifth-col)"></i>Quinte</span></div>';
+          '<span><i class="dot" style="background:var(--fifth-col)"></i>Quinte</span>' +
+          septLegend + '</div>';
 
-        panel.innerHTML = '<h2>' + disp + '</h2><p class="sub">' + typeLabel + ' \u00b7 ' +
+        panel.innerHTML = '<h2>' + disp + '</h2>' + toggleHtml +
+          '<p class="sub">' + typeLabel + ' \u00b7 ' +
           (instrument === "guitar" ? "Gitarrengriff" : "Klaviergriffe") + '</p>' +
           '<div class="voicings">' + body + '</div>' + legend;
+
+        panel.querySelectorAll(".ext-btn").forEach(function(btn) {
+          btn.addEventListener("click", function() {
+            chordExt = this.getAttribute("data-ext");
+            voicingIndex = 0;
+            renderPanel();
+          });
+        });
 
         var btnPrev = document.getElementById("btn-prev-v");
         var btnNext = document.getElementById("btn-next-v");
         if (btnPrev) btnPrev.addEventListener("click", function() {
-          var len = (GUITAR[lastChordEl.getAttribute("data-chord")] || []).length;
-          voicingIndex = (voicingIndex - 1 + len) % len;
+          var voicings2 = GUITAR[lastChordEl.getAttribute("data-chord")] || [];
+          voicingIndex = (voicingIndex - 1 + voicings2.length) % voicings2.length;
           renderPanel();
         });
         if (btnNext) btnNext.addEventListener("click", function() {
-          var len = (GUITAR[lastChordEl.getAttribute("data-chord")] || []).length;
-          voicingIndex = (voicingIndex + 1) % len;
+          var voicings2 = GUITAR[lastChordEl.getAttribute("data-chord")] || [];
+          voicingIndex = (voicingIndex + 1) % voicings2.length;
           renderPanel();
         });
       }
