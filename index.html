@@ -454,7 +454,16 @@
           });
           txt.textContent = rd.disp[i];
           g.appendChild(txt);
-          g.addEventListener("click", function () { showChord(this); });
+          (function(el, segIndex, ringKey) {
+            el.addEventListener("click", function() {
+              if (modesOn && ringKey === "major") {
+                rotation = segIndex;
+                updateStencil();
+              } else {
+                showChord(el);
+              }
+            });
+          })(g, i, rd.key);
           svg.appendChild(g);
         }
       });
