@@ -1,0 +1,562 @@
+<!DOCTYPE html>
+<html lang="de">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Interaktiver Quintenzirkel mit Modi-Schablone</title>
+  <style>
+    :root {
+      --bg: #f4f3ee;
+      --surface: #ffffff;
+      --surface-2: #ebe9e0;
+      --text: #2c2c2a;
+      --text-soft: #5f5e5a;
+      --text-faint: #888780;
+      --border: rgba(0, 0, 0, 0.18);
+      --border-strong: rgba(0, 0, 0, 0.32);
+      --accent: #185fa5;
+      --accent-soft: #e6f1fb;
+      --root-col: #d85a30;
+      /* Grundton  */
+      --third-col: #1d9e75;
+      /* Terz      */
+      --fifth-col: #7f77dd;
+      /* Quinte    */
+      --stencil-fill: rgba(83, 74, 183, 0.30);
+      --stencil-stroke: #534ab7;
+      --stencil-text: #26215c;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #1f1e1c;
+        --surface: #2a2926;
+        --surface-2: #34332f;
+        --text: #ece9e0;
+        --text-soft: #b4b2a9;
+        --text-faint: #888780;
+        --border: rgba(255, 255, 255, 0.20);
+        --border-strong: rgba(255, 255, 255, 0.38);
+        --accent: #85b7eb;
+        --accent-soft: #12365a;
+        --root-col: #f0997b;
+        --third-col: #5dcaa5;
+        --fifth-col: #afa9ec;
+        --stencil-fill: rgba(175, 169, 236, 0.22);
+        --stencil-stroke: #afa9ec;
+        --stencil-text: #eeedfe;
+      }
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      line-height: 1.6;
+    }
+
+    .page {
+      max-width: 760px;
+      margin: 0 auto;
+      padding: 1.5rem 1rem 3rem;
+    }
+
+    h1 {
+      font-size: 22px;
+      font-weight: 500;
+      margin: 0 0 0.25rem;
+    }
+
+    .lede {
+      font-size: 14px;
+      color: var(--text-soft);
+      margin: 0 0 1.5rem;
+    }
+
+    .controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+      margin-bottom: 1rem;
+    }
+
+    .grp {
+      display: flex;
+      gap: 6px;
+      align-items: center;
+    }
+
+    .grp>label {
+      font-size: 13px;
+      color: var(--text-soft);
+      margin-right: 2px;
+    }
+
+    button {
+      font: inherit;
+      font-size: 13px;
+      padding: 6px 12px;
+      cursor: pointer;
+      background: var(--surface);
+      color: var(--text);
+      border: 1px solid var(--border-strong);
+      border-radius: 8px;
+      transition: background 0.12s, transform 0.05s;
+    }
+
+    button:hover {
+      background: var(--surface-2);
+    }
+
+    button:active {
+      transform: scale(0.97);
+    }
+
+    button.active {
+      background: var(--accent-soft);
+      color: var(--accent);
+      border-color: var(--accent);
+    }
+
+    .stage {
+      position: relative;
+      width: 100%;
+      max-width: 620px;
+      margin: 0 auto;
+    }
+
+    svg {
+      display: block;
+      width: 100%;
+      height: auto;
+    }
+
+    .seg-chord {
+      cursor: pointer;
+    }
+
+    .seg-chord:hover .seg-bg {
+      fill: var(--surface-2);
+    }
+
+    .hint {
+      font-size: 12px;
+      color: var(--text-faint);
+      text-align: center;
+      margin-top: 8px;
+    }
+
+    .panel {
+      margin-top: 1rem;
+      background: var(--surface-2);
+      border-radius: 12px;
+      padding: 1rem 1.25rem;
+      min-height: 70px;
+    }
+
+    .panel.empty {
+      color: var(--text-faint);
+      font-size: 14px;
+    }
+
+    .panel h2 {
+      margin: 0 0 2px;
+      font-size: 18px;
+      font-weight: 500;
+    }
+
+    .panel .sub {
+      font-size: 13px;
+      color: var(--text-soft);
+      margin: 0 0 12px;
+    }
+
+    .voicings {
+      display: flex;
+      gap: 22px;
+      flex-wrap: wrap;
+      align-items: flex-start;
+    }
+
+    .voicing {
+      text-align: center;
+    }
+
+    .voicing .vlabel {
+      font-size: 12px;
+      color: var(--text-faint);
+      margin-top: 4px;
+    }
+
+    .legend {
+      display: flex;
+      gap: 14px;
+      flex-wrap: wrap;
+      margin-top: 12px;
+      font-size: 12px;
+      color: var(--text-soft);
+    }
+
+    .legend span {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .dot {
+      width: 11px;
+      height: 11px;
+      border-radius: 50%;
+      display: inline-block;
+    }
+
+    footer {
+      margin-top: 2rem;
+      font-size: 12px;
+      color: var(--text-faint);
+    }
+
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      overflow: hidden;
+      clip: rect(0 0 0 0);
+    }
+  </style>
+</head>
+
+<body>
+  <div class="page">
+    <h1>Interaktiver Quintenzirkel</h1>
+    <p class="lede">Drei Ringe — Dur, parallele Molltonart, verminderte 7. Stufe. Akkord anklicken für das Griffbild.
+      Die Modi-Schablone lässt sich ein-/ausblenden und drehen.</p>
+
+    <div class="controls">
+      <div class="grp">
+        <label>Griffe</label>
+        <button class="active" id="btn-guitar">Gitarre</button>
+        <button id="btn-piano">Klavier</button>
+      </div>
+      <div class="grp">
+        <label>Modi-Schablone</label>
+        <button id="btn-modes">einblenden</button>
+      </div>
+      <div class="grp" id="rotate-grp" style="display:none;">
+        <button id="btn-ccw" aria-label="gegen Uhrzeigersinn drehen">&#8634;</button>
+        <span id="mode-key" style="font-size:13px; font-weight:500; min-width:90px; text-align:center;">Ion auf C</span>
+        <button id="btn-cw" aria-label="im Uhrzeigersinn drehen">&#8635;</button>
+      </div>
+    </div>
+
+    <div class="stage">
+      <svg id="cof-svg" viewBox="0 0 620 620" xmlns="http://www.w3.org/2000/svg" role="img"
+        aria-label="Quintenzirkel mit drehbarer Modi-Schablone"></svg>
+    </div>
+    <p class="hint">Akkord anklicken, um das Griffbild zu sehen. Schablone drehen mit den Pfeiltasten.</p>
+
+    <div class="panel empty" id="panel">Noch kein Akkord gewählt — klicke auf ein Segment im Zirkel.</div>
+
+  </div>
+
+  <script>
+    (function () {
+      "use strict";
+      var SVG_NS = "http://www.w3.org/2000/svg";
+      var svg = document.getElementById("cof-svg");
+      var CX = 310, CY = 310;
+
+      var MAJOR = ["C", "G", "D", "A", "E", "B", "F#", "C#", "G#", "D#", "A#", "F"];
+      var MAJOR_DISP = ["C", "G", "D", "A", "E", "H", "Fis", "Des", "As", "Es", "B", "F"];
+      var MINOR = ["Am", "Em", "Bm", "F#m", "C#m", "G#m", "D#m", "A#m", "Fm", "Cm", "Gm", "Dm"];
+      var MINOR_DISP = ["Am", "Em", "Hm", "Fism", "Cism", "Gism", "Dism", "Bm", "Fm", "Cm", "Gm", "Dm"];
+      var DIM = ["Bdim", "F#dim", "C#dim", "G#dim", "D#dim", "A#dim", "Fdim", "Cdim", "Gdim", "Ddim", "Adim", "Edim"];
+      var DIM_DISP = ["H\u00b0", "Fis\u00b0", "Cis\u00b0", "Gis\u00b0", "Dis\u00b0", "Ais\u00b0", "F\u00b0", "C\u00b0", "G\u00b0", "D\u00b0", "A\u00b0", "E\u00b0"];
+
+      var RING = { major: { r1: 60, r2: 128 }, minor: { r1: 128, r2: 196 }, dim: { r1: 196, r2: 264 } };
+      var SEG_FILL = ["#e6f1fb", "#e1f5ee", "#faece7", "#eeedfe", "#fbeaf0", "#faeeda", "#eaf3de", "#fcebeb", "#f1efe8", "#e6f1fb", "#e1f5ee", "#faece7"];
+      var SEG_FILL_DARK = ["#0c447c", "#085041", "#712b13", "#3c3489", "#72243e", "#633806", "#27500a", "#791f1f", "#444441", "#0c447c", "#085041", "#712b13"];
+      var darkMode = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
+
+      // chord roots and triad construction
+      var NOTE_IDX = { "C": 0, "C#": 1, "D": 2, "D#": 3, "E": 4, "F": 5, "F#": 6, "G": 7, "G#": 8, "A": 9, "A#": 10, "B": 11 };
+      function triad(root, type) {
+        var r = NOTE_IDX[root];
+        var iv = type === "major" ? [0, 4, 7] : type === "minor" ? [0, 3, 7] : [0, 3, 6];
+        return iv.map(function (s) { return (r + s) % 12; });
+      }
+      // role of each pitch class within a chord: 1=root,3=third,5=fifth
+      function roleMap(root, type) {
+        var t = triad(root, type);
+        var m = {}; m[t[0]] = "root"; m[t[1]] = "third"; m[t[2]] = "fifth";
+        return m;
+      }
+
+      // guitar voicings: 6 strings low->high; -1 muted, 0 open, n fret
+      var GUITAR = {
+        "C": [-1, 3, 2, 0, 1, 0], "G": [3, 2, 0, 0, 0, 3], "D": [-1, -1, 0, 2, 3, 2], "A": [-1, 0, 2, 2, 2, 0],
+        "E": [0, 2, 2, 1, 0, 0], "B": [-1, 2, 4, 4, 4, 2], "F#": [2, 4, 4, 3, 2, 2], "C#": [-1, 4, 6, 6, 6, 4],
+        "G#": [4, 6, 6, 5, 4, 4], "D#": [-1, 6, 8, 8, 8, 6], "A#": [-1, 1, 3, 3, 3, 1], "F": [1, 3, 3, 2, 1, 1],
+        "Am": [-1, 0, 2, 2, 1, 0], "Em": [0, 2, 2, 0, 0, 0], "Bm": [-1, 2, 4, 4, 3, 2], "F#m": [2, 4, 4, 2, 2, 2],
+        "C#m": [-1, 4, 6, 6, 5, 4], "G#m": [4, 6, 6, 4, 4, 4], "D#m": [-1, 6, 8, 8, 7, 6], "A#m": [-1, 1, 3, 3, 2, 1],
+        "Fm": [1, 3, 3, 1, 1, 1], "Cm": [-1, 3, 5, 5, 4, 3], "Gm": [3, 5, 5, 3, 3, 3], "Dm": [-1, -1, 0, 2, 3, 1],
+        "Bdim": [-1, 2, 3, 4, 3, -1], "F#dim": [2, 3, 4, 2, -1, -1], "C#dim": [-1, 4, 5, 6, 5, -1],
+        "G#dim": [4, 5, 6, 4, -1, -1], "D#dim": [-1, 6, 7, 8, 7, -1], "A#dim": [-1, 1, 2, 3, 2, -1],
+        "Fdim": [1, 2, 3, 1, -1, -1], "Cdim": [-1, 3, 4, 5, 4, -1], "Gdim": [3, 4, 5, 3, -1, -1],
+        "Ddim": [-1, 5, 6, 7, 6, -1], "Adim": [-1, 0, 1, 2, 1, -1], "Edim": [0, 1, 2, 0, -1, -1]
+      };
+      // standard tuning pitch classes, low E -> high e
+      var STRING_PC = [4, 9, 2, 7, 11, 4];
+
+      // -- geometry --------------------------------------------------------
+      function pt(r, deg) { var a = (deg - 90) * Math.PI / 180; return [CX + r * Math.cos(a), CY + r * Math.sin(a)]; }
+      function segPath(r1, r2, a1, a2) {
+        var p1 = pt(r2, a1), p2 = pt(r2, a2), p3 = pt(r1, a2), p4 = pt(r1, a1);
+        return "M" + p1[0] + " " + p1[1] + " A" + r2 + " " + r2 + " 0 0 1 " + p2[0] + " " + p2[1] +
+          " L" + p3[0] + " " + p3[1] + " A" + r1 + " " + r1 + " 0 0 0 " + p4[0] + " " + p4[1] + " Z";
+      }
+      function mk(name, attrs) {
+        var e = document.createElementNS(SVG_NS, name);
+        for (var k in attrs) { e.setAttribute(k, attrs[k]); } return e;
+      }
+
+      // -- build rings -----------------------------------------------------
+      var ringDefs = [
+        { key: "major", names: MAJOR, disp: MAJOR_DISP, type: "major" },
+        { key: "minor", names: MINOR, disp: MINOR_DISP, type: "minor" },
+        { key: "dim", names: DIM, disp: DIM_DISP, type: "dim" }
+      ];
+      ringDefs.forEach(function (rd) {
+        var R = RING[rd.key];
+        for (var i = 0; i < 12; i++) {
+          var a1 = i * 30 - 15, a2 = i * 30 + 15, mid = i * 30;
+          var g = mk("g", { class: "seg-chord" });
+          g.setAttribute("data-chord", rd.names[i]);
+          g.setAttribute("data-disp", rd.disp[i]);
+          g.setAttribute("data-type", rd.type);
+          var fill = darkMode ? SEG_FILL_DARK[i] : SEG_FILL[i];
+          var bg = mk("path", {
+            class: "seg-bg", d: segPath(R.r1, R.r2, a1, a2),
+            fill: fill, stroke: "var(--border-strong)", "stroke-width": "1"
+          });
+          g.appendChild(bg);
+          var lr = (R.r1 + R.r2) / 2, lp = pt(lr, mid);
+          var txt = mk("text", {
+            x: lp[0], y: lp[1] + 5, "text-anchor": "middle",
+            "font-size": "15", "font-weight": "600", fill: "var(--text)"
+          });
+          txt.textContent = rd.disp[i];
+          g.appendChild(txt);
+          g.addEventListener("click", function () { showChord(this); });
+          svg.appendChild(g);
+        }
+      });
+      // hub
+      svg.appendChild(mk("circle", {
+        cx: CX, cy: CY, r: RING.major.r1 - 2,
+        fill: "var(--surface-2)", stroke: "var(--border)", "stroke-width": "1"
+      }));
+      var h1 = mk("text", { x: CX, y: CY - 4, "text-anchor": "middle", "font-size": "13", fill: "var(--text-faint)" });
+      h1.textContent = "Quinten"; svg.appendChild(h1);
+      var h2 = mk("text", { x: CX, y: CY + 14, "text-anchor": "middle", "font-size": "13", fill: "var(--text-faint)" });
+      h2.textContent = "zirkel"; svg.appendChild(h2);
+
+      // -- mode stencil ----------------------------------------------------
+      var stencil = mk("g", { id: "stencil", opacity: "0", "pointer-events": "none" });
+      function stencilCell(r1, r2, rel, label) {
+        var a1 = rel * 30 - 15, a2 = rel * 30 + 15, mid = rel * 30;
+        var g = mk("g", {});
+        g.appendChild(mk("path", {
+          d: segPath(r1, r2, a1, a2),
+          fill: "var(--stencil-fill)", stroke: "var(--stencil-stroke)", "stroke-width": "2.5"
+        }));
+        var lr = (r1 + r2) / 2, lp = pt(lr, mid);
+        var t = mk("text", {
+          x: lp[0], y: lp[1] - 7, "text-anchor": "middle",
+          "font-size": "16", "font-weight": "600", fill: "var(--stencil-text)"
+        });
+        t.textContent = label; g.appendChild(t);
+        return g;
+      }
+      var Rm = RING.major, Rn = RING.minor, Rd = RING.dim;
+      [["Lyd", -1], ["Ion", 0], ["Mix", 1]].forEach(function (c) { stencil.appendChild(stencilCell(Rm.r1, Rm.r2, c[1], c[0])); });
+      [["Dor", -1], ["Aeo", 0], ["Phr", 1]].forEach(function (c) { stencil.appendChild(stencilCell(Rn.r1, Rn.r2, c[1], c[0])); });
+      stencil.appendChild(stencilCell(Rd.r1, Rd.r2, 0, "Loc"));
+      svg.appendChild(stencil);
+
+      // -- state -----------------------------------------------------------
+      var instrument = "guitar", modesOn = false, rotation = 0, lastChordEl = null;
+
+      function updateStencil() {
+        stencil.setAttribute("transform", "rotate(" + (rotation * 30) + " " + CX + " " + CY + ")");
+        stencil.setAttribute("opacity", modesOn ? "1" : "0");
+        document.getElementById("mode-key").textContent =
+          "Ion auf " + MAJOR_DISP[((rotation % 12) + 12) % 12];
+      }
+
+      // -- guitar renderer with role colouring -----------------------------
+      function roleColor(role) {
+        return role === "root" ? "var(--root-col)"
+          : role === "third" ? "var(--third-col)"
+            : "var(--fifth-col)";
+      }
+      function renderGuitar(chord, type) {
+        var v = GUITAR[chord];
+        if (!v) return "<p style='font-size:13px;color:var(--text-soft)'>Kein Griff hinterlegt.</p>";
+        var rootName = chord.replace(/dim$/, "").replace(/m$/, "");
+        var roles = roleMap(rootName, type);
+        var W = 140, H = 160, padL = 22, padT = 26, padB = 20, nStr = 6, nFr = 5;
+        var sGap = (W - 2 * padL) / (nStr - 1), fGap = (H - padT - padB) / nFr;
+        var played = v.filter(function (f) { return f > 0; });
+        var baseFret = played.length ? Math.min.apply(null, played) : 1;
+        if (baseFret < 1) baseFret = 1;
+        var s = '<svg width="' + W + '" height="' + H + '" viewBox="0 0 ' + W + ' ' + H + '" xmlns="http://www.w3.org/2000/svg">';
+        for (var fr = 0; fr <= nFr; fr++) {
+          var y = padT + fr * fGap;
+          var thick = (fr === 0 && baseFret === 1) ? 3 : 1;
+          s += '<line x1="' + padL + '" y1="' + y + '" x2="' + (W - padL) + '" y2="' + y + '" stroke="var(--border-strong)" stroke-width="' + thick + '"/>';
+        }
+        for (var st = 0; st < nStr; st++) {
+          var x = padL + st * sGap;
+          s += '<line x1="' + x + '" y1="' + padT + '" x2="' + x + '" y2="' + (H - padB) + '" stroke="var(--border-strong)" stroke-width="1"/>';
+        }
+        if (baseFret > 1) {
+          s += '<text x="' + (padL - 7) + '" y="' + (padT + fGap * 0.7) + '" text-anchor="end" font-size="11" fill="var(--text-faint)">' + baseFret + 'fr</text>';
+        }
+        for (var st = 0; st < nStr; st++) {
+          var f = v[st], x = padL + st * sGap;
+          if (f < 0) {
+            s += '<text x="' + x + '" y="' + (padT - 9) + '" text-anchor="middle" font-size="13" fill="var(--text-faint)">\u00d7</text>';
+            continue;
+          }
+          var pc = (STRING_PC[st] + f) % 12;
+          var role = roles[pc] || "fifth";
+          var col = roleColor(role);
+          if (f === 0) {
+            s += '<circle cx="' + x + '" cy="' + (padT - 13) + '" r="6" fill="none" stroke="' + col + '" stroke-width="2"/>';
+          } else {
+            var rel = f - baseFret;
+            var cy = padT + rel * fGap + fGap / 2;
+            s += '<circle cx="' + x + '" cy="' + cy + '" r="9" fill="' + col + '"/>';
+          }
+        }
+        return s + '</svg>';
+      }
+
+      // -- piano renderer (root + inversions) ------------------------------
+      function pianoSVG(notesOrdered, roles) {
+        // notesOrdered: array of absolute semitone positions (may exceed 12)
+        var W = 224, H = 116, wW = W / 8; // 8 white keys = just over an octave
+        var whitePos = { 0: 0, 2: 1, 4: 2, 5: 3, 7: 4, 9: 5, 11: 6, 12: 7 }; // pc(mod12)->white index
+        var blackParent = { 1: 0, 3: 1, 6: 3, 8: 4, 10: 5 };
+        var s = '<svg width="' + W + '" height="' + H + '" viewBox="0 0 ' + W + ' ' + H + '" xmlns="http://www.w3.org/2000/svg">';
+        var active = {};
+        notesOrdered.forEach(function (n) { active[n] = true; });
+        // white keys
+        for (var w = 0; w < 8; w++) {
+          s += '<rect x="' + (w * wW) + '" y="0" width="' + wW + '" height="' + H + '" fill="var(--surface)" stroke="var(--border-strong)" stroke-width="1"/>';
+        }
+        // black keys
+        var blacks = [1, 3, 6, 8, 10];
+        blacks.forEach(function (pc) {
+          var x = (blackParent[pc] + 1) * wW - wW * 0.30;
+          s += '<rect x="' + x + '" y="0" width="' + (wW * 0.6) + '" height="' + (H * 0.62) + '" fill="var(--text)" stroke="var(--border-strong)" stroke-width="1"/>';
+        });
+        // markers — draw a dot on each played note
+        notesOrdered.forEach(function (n) {
+          var pc = n % 12, oct = Math.floor(n / 12);
+          var role = roles[pc];
+          var col = role === "root" ? "var(--root-col)" : role === "third" ? "var(--third-col)" : "var(--fifth-col)";
+          if (whitePos.hasOwnProperty(pc) || pc === 12) {
+            var wi = whitePos[pc === 12 ? 12 : pc] + (pc === 12 ? 0 : oct * 7);
+            if (pc !== 12) wi = whitePos[pc] + oct * 7;
+            var cx = wi * wW + wW / 2, cy = H - 17;
+            s += '<circle cx="' + cx + '" cy="' + cy + '" r="7" fill="' + col + '"/>';
+          } else {
+            var bx = (blackParent[pc] + 1) * wW - wW * 0.30 + oct * 7 * wW;
+            var cx2 = bx + wW * 0.3, cy2 = H * 0.62 - 15;
+            s += '<circle cx="' + cx2 + '" cy="' + cy2 + '" r="6" fill="' + col + '"/>';
+          }
+        });
+        return s + '</svg>';
+      }
+
+      function pianoVoicing(root, type, inversion) {
+        // returns absolute semitone positions for the requested inversion
+        var iv = type === "major" ? [0, 4, 7] : type === "minor" ? [0, 3, 7] : [0, 3, 6];
+        var r = NOTE_IDX[root];
+        var notes = iv.map(function (s) { return r + s; }); // root position, may exceed 12
+        for (var k = 0; k < inversion; k++) {
+          var low = notes.shift();
+          notes.push(low + 12);
+        }
+        // normalise so the lowest note sits in octave 0..
+        var min = Math.min.apply(null, notes);
+        var shift = Math.floor(min / 12) * 12;
+        return notes.map(function (n) { return n - shift; });
+      }
+
+      // -- panel -----------------------------------------------------------
+      function showChord(g) {
+        lastChordEl = g;
+        var chord = g.getAttribute("data-chord");
+        var disp = g.getAttribute("data-disp");
+        var type = g.getAttribute("data-type");
+        var typeLabel = type === "major" ? "Durdreiklang" : type === "minor" ? "Molldreiklang" : "verminderter Dreiklang";
+        var root = chord.replace(/dim$/, "").replace(/m$/, "");
+        var roles = roleMap(root, type);
+        var panel = document.getElementById("panel");
+        panel.classList.remove("empty");
+        var body = "";
+        if (instrument === "guitar") {
+          body = '<div class="voicing">' + renderGuitar(chord, type) + '<div class="vlabel">Grundgriff</div></div>';
+        } else {
+          var inv = [["Grundstellung", 0], ["1. Umkehrung", 1], ["2. Umkehrung", 2]];
+          body = inv.map(function (it) {
+            var notes = pianoVoicing(root, type, it[1]);
+            return '<div class="voicing">' + pianoSVG(notes, roles) + '<div class="vlabel">' + it[0] + '</div></div>';
+          }).join("");
+        }
+        var legend = '<div class="legend">' +
+          '<span><i class="dot" style="background:var(--root-col)"></i>Grundton</span>' +
+          '<span><i class="dot" style="background:var(--third-col)"></i>Terz</span>' +
+          '<span><i class="dot" style="background:var(--fifth-col)"></i>Quinte</span></div>';
+        panel.innerHTML = '<h2>' + disp + '</h2><p class="sub">' + typeLabel + ' \u00b7 ' +
+          (instrument === "guitar" ? "Gitarrengriff" : "Klaviergriffe") + '</p>' +
+          '<div class="voicings">' + body + '</div>' + legend;
+      }
+
+      // -- controls --------------------------------------------------------
+      var bG = document.getElementById("btn-guitar"), bP = document.getElementById("btn-piano");
+      bG.addEventListener("click", function () {
+        instrument = "guitar"; bG.classList.add("active"); bP.classList.remove("active");
+        if (lastChordEl) showChord(lastChordEl);
+      });
+      bP.addEventListener("click", function () {
+        instrument = "piano"; bP.classList.add("active"); bG.classList.remove("active");
+        if (lastChordEl) showChord(lastChordEl);
+      });
+      var bM = document.getElementById("btn-modes");
+      bM.addEventListener("click", function () {
+        modesOn = !modesOn;
+        bM.textContent = modesOn ? "ausblenden" : "einblenden";
+        bM.classList.toggle("active", modesOn);
+        document.getElementById("rotate-grp").style.display = modesOn ? "flex" : "none";
+        updateStencil();
+      });
+      document.getElementById("btn-cw").addEventListener("click", function () { rotation++; updateStencil(); });
+      document.getElementById("btn-ccw").addEventListener("click", function () { rotation--; updateStencil(); });
+
+      updateStencil();
+    })();
+  </script>
+</body>
+
+</html>
