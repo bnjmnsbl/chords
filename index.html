@@ -520,10 +520,10 @@
           d: segPath(r1, r2, a1, a2),
           fill: "var(--stencil-fill)", stroke: "var(--stencil-stroke)", "stroke-width": "2.5"
         }));
-        var lr = (r1 + r2) / 2, lp = pt(lr, mid);
+        var lr = r2 - 10, lp = pt(lr, mid);
         var t = mk("text", {
-          x: lp[0], y: lp[1] - 7, "text-anchor": "middle",
-          "font-size": "16", "font-weight": "600", fill: "var(--stencil-text)"
+          x: lp[0], y: lp[1] + 4, "text-anchor": "middle",
+          "font-size": "11", "font-weight": "700", fill: "var(--stencil-text)"
         });
         t.textContent = label; g.appendChild(t);
         return g;
