@@ -64,7 +64,7 @@
     }
 
     .page {
-      max-width: 760px;
+      max-width: 960px;
       margin: 0 auto;
       padding: 1.5rem 1rem 3rem;
     }
@@ -243,6 +243,38 @@
       padding: 3px 10px;
     }
 
+    .main-layout {
+      display: block;
+    }
+
+    @media (min-width: 900px) and (min-height: 700px) {
+      .main-layout {
+        display: grid;
+        grid-template-columns: minmax(0, 480px) minmax(0, 1fr);
+        grid-template-rows: auto auto;
+        gap: 0 1.5rem;
+        align-items: start;
+      }
+      .stage {
+        grid-column: 1;
+        grid-row: 1;
+        margin: 0;
+      }
+      .hint {
+        grid-column: 1;
+        grid-row: 2;
+      }
+      #panel {
+        grid-column: 2;
+        grid-row: 1 / 3;
+        margin-top: 0;
+        max-height: calc(100vh - 220px);
+        overflow-y: auto;
+        position: sticky;
+        top: 1rem;
+      }
+    }
+
     footer {
       margin-top: 2rem;
       font-size: 12px;
@@ -282,13 +314,15 @@
       </div>
     </div>
 
-    <div class="stage">
-      <svg id="cof-svg" viewBox="0 0 620 620" xmlns="http://www.w3.org/2000/svg" role="img"
-        aria-label="Quintenzirkel mit drehbarer Modi-Schablone"></svg>
-    </div>
-    <p class="hint">Akkord anklicken, um das Griffbild zu sehen. Schablone drehen mit den Pfeiltasten.</p>
+    <div class="main-layout">
+      <div class="stage">
+        <svg id="cof-svg" viewBox="0 0 620 620" xmlns="http://www.w3.org/2000/svg" role="img"
+          aria-label="Quintenzirkel mit drehbarer Modi-Schablone"></svg>
+      </div>
+      <p class="hint">Akkord anklicken, um das Griffbild zu sehen. Schablone drehen mit den Pfeiltasten.</p>
 
-    <div class="panel empty" id="panel">Noch kein Akkord gewählt — klicke auf ein Segment im Zirkel.</div>
+      <div class="panel empty" id="panel">Noch kein Akkord gewählt — klicke auf ein Segment im Zirkel.</div>
+    </div>
 
   </div>
 
