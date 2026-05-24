@@ -554,41 +554,41 @@
       }
 
       // -- piano renderer (root + inversions) ------------------------------
+      // 2 octaves: C0..B1 = white keys 0..13 (15 whites), semitones 0..23
+      // pcWhite[pc] = white-key index within one octave (0=C,1=D,2=E,3=F,4=G,5=A,6=B)
+      var PC_WHITE = { 0:0, 2:1, 4:2, 5:3, 7:4, 9:5, 11:6 };
+      var PC_BLACK_PARENT = { 1:0, 3:1, 6:3, 8:4, 10:5 }; // black key sits right of this white index
       function pianoSVG(notesOrdered, roles) {
-        // notesOrdered: array of absolute semitone positions (may exceed 12)
-        var W = 224, H = 116, wW = W / 8; // 8 white keys = just over an octave
-        var whitePos = { 0: 0, 2: 1, 4: 2, 5: 3, 7: 4, 9: 5, 11: 6, 12: 7 }; // pc(mod12)->white index
-        var blackParent = { 1: 0, 3: 1, 6: 3, 8: 4, 10: 5 };
+        var nWhite = 15, W = 270, H = 100, wW = W / nWhite;
         var s = '<svg width="' + W + '" height="' + H + '" viewBox="0 0 ' + W + ' ' + H + '" xmlns="http://www.w3.org/2000/svg">';
-        var active = {};
-        notesOrdered.forEach(function (n) { active[n] = true; });
         // white keys
-        for (var w = 0; w < 8; w++) {
-          s += '<rect x="' + (w * wW) + '" y="0" width="' + wW + '" height="' + H + '" fill="var(--surface)" stroke="var(--border-strong)" stroke-width="1"/>';
+        for (var w = 0; w < nWhite; w++) {
+          s += '<rect x="' + (w * wW) + '" y="0" width="' + (wW - 1) + '" height="' + H + '" fill="var(--surface)" stroke="var(--border-strong)" stroke-width="1"/>';
         }
-        // black keys
-        var blacks = [1, 3, 6, 8, 10];
-        blacks.forEach(function (pc) {
-          var x = (blackParent[pc] + 1) * wW - wW * 0.30;
-          s += '<rect x="' + x + '" y="0" width="' + (wW * 0.6) + '" height="' + (H * 0.62) + '" fill="var(--text)" stroke="var(--border-strong)" stroke-width="1"/>';
+        // black keys: 2 octaves → positions [1,3,6,8,10] + 12 offset
+        [0, 12].forEach(function(octBase) {
+          [1, 3, 6, 8, 10].forEach(function(pc) {
+            var oct = octBase / 12;
+            var whiteIdx = PC_BLACK_PARENT[pc] + oct * 7;
+            var x = (whiteIdx + 1) * wW - wW * 0.32;
+            s += '<rect x="' + x + '" y="0" width="' + (wW * 0.64) + '" height="' + (H * 0.62) + '" fill="var(--text)" stroke="var(--border-strong)" stroke-width="1"/>';
+          });
         });
-        // markers — draw a dot on each played note
-        notesOrdered.forEach(function (n) {
+        // markers
+        notesOrdered.forEach(function(n) {
           var pc = n % 12, oct = Math.floor(n / 12);
           var role = roles[pc];
           var col = role === "root"    ? "var(--root-col)"
                   : role === "third"   ? "var(--third-col)"
                   : role === "seventh" ? "var(--seventh-col)"
                   : "var(--fifth-col)";
-          if (whitePos.hasOwnProperty(pc) || pc === 12) {
-            var wi = whitePos[pc === 12 ? 12 : pc] + (pc === 12 ? 0 : oct * 7);
-            if (pc !== 12) wi = whitePos[pc] + oct * 7;
-            var cx = wi * wW + wW / 2, cy = H - 17;
-            s += '<circle cx="' + cx + '" cy="' + cy + '" r="7" fill="' + col + '"/>';
+          if (PC_WHITE.hasOwnProperty(pc)) {
+            var wi = PC_WHITE[pc] + oct * 7;
+            s += '<circle cx="' + (wi * wW + wW / 2) + '" cy="' + (H - 13) + '" r="6" fill="' + col + '"/>';
           } else {
-            var bx = (blackParent[pc] + 1) * wW - wW * 0.30 + oct * 7 * wW;
-            var cx2 = bx + wW * 0.3, cy2 = H * 0.62 - 15;
-            s += '<circle cx="' + cx2 + '" cy="' + cy2 + '" r="6" fill="' + col + '"/>';
+            var bi = PC_BLACK_PARENT[pc] + oct * 7;
+            var bx = (bi + 1) * wW - wW * 0.32 + wW * 0.32;
+            s += '<circle cx="' + bx + '" cy="' + (H * 0.62 - 12) + '" r="5" fill="' + col + '"/>';
           }
         });
         return s + '</svg>';
