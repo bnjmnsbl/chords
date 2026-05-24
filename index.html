@@ -457,6 +457,8 @@
       }
 
       // -- build rings -----------------------------------------------------
+      // accidentals per major key, same order as MAJOR array
+      var KEY_SIG = ["", "1♯", "2♯", "3♯", "4♯", "5♯", "6♯", "5♭", "4♭", "3♭", "2♭", "1♭"];
       var ringDefs = [
         { key: "major", names: MAJOR, disp: MAJOR_DISP, type: "major" },
         { key: "minor", names: MINOR, disp: MINOR_DISP, type: "minor" },
@@ -477,12 +479,21 @@
           });
           g.appendChild(bg);
           var lr = (R.r1 + R.r2) / 2, lp = pt(lr, mid);
+          var nameY = rd.key === "major" && KEY_SIG[i] !== "" ? lp[1] - 1 : lp[1] + 5;
           var txt = mk("text", {
-            x: lp[0], y: lp[1] + 5, "text-anchor": "middle",
+            x: lp[0], y: nameY, "text-anchor": "middle",
             "font-size": "15", "font-weight": "600", fill: "var(--text)"
           });
           txt.textContent = rd.disp[i];
           g.appendChild(txt);
+          if (rd.key === "major" && KEY_SIG[i] !== "") {
+            var sig = mk("text", {
+              x: lp[0], y: lp[1] + 14, "text-anchor": "middle",
+              "font-size": "10", "font-weight": "400", fill: "var(--text-faint)"
+            });
+            sig.textContent = KEY_SIG[i];
+            g.appendChild(sig);
+          }
           (function(el, segIndex, ringKey) {
             el.addEventListener("click", function() {
               if (modesOn && ringKey === "major") {
