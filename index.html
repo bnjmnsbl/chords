@@ -383,6 +383,9 @@
         <button class="active" id="btn-guitar">Gitarre</button>
         <button id="btn-piano">Klavier</button>
       </div>
+      <div class="grp" id="leftie-grp">
+        <button id="btn-leftie">Links-Händer</button>
+      </div>
       <div class="grp">
         <label>Modi-Schablone</label>
         <button id="btn-modes">einblenden</button>
@@ -684,18 +687,19 @@
         var s = '<svg width="' + W + '" height="' + H + '" viewBox="0 0 ' + W + ' ' + H + '" xmlns="http://www.w3.org/2000/svg">';
 
         // nut
-        s += '<line x1="' + (padL + fretW * 0.5) + '" y1="' + padT + '" x2="' + (padL + fretW * 0.5) + '" y2="' + (H - padB) + '" stroke="var(--border-strong)" stroke-width="3"/>';
+        var nutX = leftHanded ? (padL + fretW * nFrets + fretW * 0.5) : (padL + fretW * 0.5);
+        s += '<line x1="' + nutX + '" y1="' + padT + '" x2="' + nutX + '" y2="' + (H - padB) + '" stroke="var(--border-strong)" stroke-width="3"/>';
 
         // fret lines
         for (var f = 1; f <= nFrets; f++) {
-          var fx = padL + fretW * f + fretW * 0.5;
+          var fx = leftHanded ? (padL + fretW * (nFrets - f) + fretW * 0.5) : (padL + fretW * f + fretW * 0.5);
           s += '<line x1="' + fx + '" y1="' + padT + '" x2="' + fx + '" y2="' + (H - padB) + '" stroke="var(--border)" stroke-width="1"/>';
         }
 
         // fret numbers
         var markerFrets = [3, 5, 7, 9, 12, 15];
         for (var f = 0; f <= nFrets; f++) {
-          var fx = padL + fretW * f + fretW * 0.5;
+          var fx = leftHanded ? (padL + fretW * (nFrets - f) + fretW * 0.5) : (padL + fretW * f + fretW * 0.5);
           var label = f === 0 ? "0" : String(f);
           var isMark = markerFrets.indexOf(f) !== -1;
           s += '<text x="' + fx + '" y="' + (padT - 6) + '" text-anchor="middle" font-size="9" fill="' + (isMark ? "var(--text-soft)" : "var(--text-faint)") + '" font-weight="' + (isMark ? "600" : "400") + '">' + label + '</text>';
@@ -707,7 +711,9 @@
           var sy = padT + st * stringH;
           var thick = st < 3 ? 2 : 1;
           s += '<line x1="' + padL + '" y1="' + sy + '" x2="' + (W - padR) + '" y2="' + sy + '" stroke="var(--border-strong)" stroke-width="' + thick + '"/>';
-          s += '<text x="' + (padL - 6) + '" y="' + (sy + 4) + '" text-anchor="end" font-size="10" fill="var(--text-faint)">' + stringNames[st] + '</text>';
+          var nameX = leftHanded ? (W - padR + 6) : (padL - 6);
+          var anchor = leftHanded ? "start" : "end";
+          s += '<text x="' + nameX + '" y="' + (sy + 4) + '" text-anchor="' + anchor + '" font-size="10" fill="var(--text-faint)">' + stringNames[st] + '</text>';
         }
 
         // dots
@@ -717,7 +723,7 @@
             var pc = (STRING_PC[st] + f) % 12;
             if (!scaleSet[pc]) continue;
             var isRoot = (pc === rootPc);
-            var fx = padL + fretW * f + fretW * 0.5;
+            var fx = leftHanded ? (padL + fretW * (nFrets - f) + fretW * 0.5) : (padL + fretW * f + fretW * 0.5);
             var r = 8;
             s += '<circle cx="' + fx + '" cy="' + sy + '" r="' + r + '" fill="' + (isRoot ? "var(--root-col)" : "var(--accent-soft)") + '" stroke="' + (isRoot ? "var(--root-col)" : "var(--accent)") + '" stroke-width="1.5"/>';
           }
@@ -850,7 +856,7 @@
       }
 
       // -- state -----------------------------------------------------------
-      var instrument = "guitar", modesOn = false, rotation = 0, lastChordEl = null;
+      var instrument = "guitar", modesOn = false, leftHanded = false, rotation = 0, lastChordEl = null;
       var voicingIndex = 0;
       var chordExt = "triad";
 
@@ -885,14 +891,14 @@
           s += '<line x1="' + padL + '" y1="' + y + '" x2="' + (W - padL) + '" y2="' + y + '" stroke="var(--border-strong)" stroke-width="' + thick + '"/>';
         }
         for (var st = 0; st < nStr; st++) {
-          var x = padL + st * sGap;
+          var x = leftHanded ? (padL + (nStr - 1 - st) * sGap) : (padL + st * sGap);
           s += '<line x1="' + x + '" y1="' + padT + '" x2="' + x + '" y2="' + (H - padB) + '" stroke="var(--border-strong)" stroke-width="1"/>';
         }
         if (baseFret > 1) {
           s += '<text x="' + (padL - 7) + '" y="' + (padT + fGap * 0.7) + '" text-anchor="end" font-size="11" fill="var(--text-faint)">' + baseFret + 'fr</text>';
         }
         for (var st = 0; st < nStr; st++) {
-          var f = v[st], x = padL + st * sGap;
+          var f = v[st], x = leftHanded ? (padL + (nStr - 1 - st) * sGap) : (padL + st * sGap);
           if (f < 0) {
             s += '<text x="' + x + '" y="' + (padT - 9) + '" text-anchor="middle" font-size="13" fill="var(--text-faint)">\u00d7</text>';
             continue;
@@ -1066,13 +1072,20 @@
       }
 
       // -- controls --------------------------------------------------------
-      var bG = document.getElementById("btn-guitar"), bP = document.getElementById("btn-piano");
+      var bG = document.getElementById("btn-guitar"), bP = document.getElementById("btn-piano"), bL = document.getElementById("btn-leftie"), lGrp = document.getElementById("leftie-grp");
       bG.addEventListener("click", function () {
         instrument = "guitar"; bG.classList.add("active"); bP.classList.remove("active");
+        lGrp.style.display = "";
         if (lastChordEl) { renderPanel(); renderScalePanel(); }
       });
       bP.addEventListener("click", function () {
         instrument = "piano"; bP.classList.add("active"); bG.classList.remove("active");
+        lGrp.style.display = "none";
+        if (lastChordEl) { renderPanel(); renderScalePanel(); }
+      });
+      bL.addEventListener("click", function() {
+        leftHanded = !leftHanded;
+        bL.classList.toggle("active", leftHanded);
         if (lastChordEl) { renderPanel(); renderScalePanel(); }
       });
       var bM = document.getElementById("btn-modes");
