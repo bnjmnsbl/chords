@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Interaktiver Quintenzirkel mit Modi-Schablone</title>
+  <title>ChordCompass — Interaktiver Quintenzirkel mit Modi-Schablone</title>
   <style>
     :root {
       --bg: #f4f3ee;
@@ -377,6 +377,11 @@
 
 <body>
   <div class="page">
+    <header>
+      <h1 id="app-title">ChordCompass</h1>
+      <p class="lede" id="app-subtitle">Interaktiver Quintenzirkel mit Modi-Schablone</p>
+    </header>
+
 <div class="controls">
       <div class="grp">
         <label id="lbl-griffe">Griffe</label>
@@ -407,7 +412,7 @@
     <div class="main-layout">
       <div class="stage">
         <svg id="cof-svg" viewBox="0 0 620 620" xmlns="http://www.w3.org/2000/svg" role="img"
-          aria-label="Quintenzirkel mit drehbarer Modi-Schablone"></svg>
+          aria-label="ChordCompass — Quintenzirkel mit drehbarer Modi-Schablone"></svg>
       </div>
       <div class="panel empty" id="panel">Noch kein Akkord gewählt — klicke auf ein Segment im Zirkel.</div>
     </div>
@@ -1052,7 +1057,12 @@
       function updateUILabels() {
         if (lang === "de") {
           document.documentElement.lang = "de";
-          document.title = "Interaktiver Quintenzirkel mit Modi-Schablone";
+          document.title = "ChordCompass — Interaktiver Quintenzirkel mit Modi-Schablone";
+          var appTitle = document.getElementById("app-title");
+          if (appTitle) appTitle.textContent = "ChordCompass";
+          var appSubtitle = document.getElementById("app-subtitle");
+          if (appSubtitle) appSubtitle.textContent = "Interaktiver Quintenzirkel mit Modi-Schablone";
+
           document.getElementById("lbl-griffe").textContent = "Griffe";
           document.getElementById("btn-guitar").textContent = "Gitarre";
           document.getElementById("btn-piano").textContent = "Klavier";
@@ -1062,7 +1072,7 @@
           document.getElementById("btn-ccw").setAttribute("aria-label", "gegen Uhrzeigersinn drehen");
           document.getElementById("btn-cw").setAttribute("aria-label", "im Uhrzeigersinn drehen");
           document.getElementById("btn-theme").setAttribute("aria-label", "Dark/Light Mode umschalten");
-          document.getElementById("cof-svg").setAttribute("aria-label", "Quintenzirkel mit drehbarer Modi-Schablone");
+          document.getElementById("cof-svg").setAttribute("aria-label", "ChordCompass — Quintenzirkel mit drehbarer Modi-Schablone");
 
           document.getElementById("hub-text-1").textContent = "Quinten";
           document.getElementById("hub-text-2").textContent = "zirkel";
@@ -1072,7 +1082,12 @@
           }
         } else {
           document.documentElement.lang = "en";
-          document.title = "Interactive Circle of Fifths with Modes Template";
+          document.title = "ChordCompass — Interactive Circle of Fifths with Modes Template";
+          var appTitle = document.getElementById("app-title");
+          if (appTitle) appTitle.textContent = "ChordCompass";
+          var appSubtitle = document.getElementById("app-subtitle");
+          if (appSubtitle) appSubtitle.textContent = "Interactive Circle of Fifths with Modes Template";
+
           document.getElementById("lbl-griffe").textContent = "Voicings";
           document.getElementById("btn-guitar").textContent = "Guitar";
           document.getElementById("btn-piano").textContent = "Piano";
@@ -1082,7 +1097,7 @@
           document.getElementById("btn-ccw").setAttribute("aria-label", "rotate counter-clockwise");
           document.getElementById("btn-cw").setAttribute("aria-label", "rotate clockwise");
           document.getElementById("btn-theme").setAttribute("aria-label", "toggle dark/light mode");
-          document.getElementById("cof-svg").setAttribute("aria-label", "Circle of fifths with rotatable modes template");
+          document.getElementById("cof-svg").setAttribute("aria-label", "ChordCompass — Circle of Fifths with Rotatable Modes Template");
 
           document.getElementById("hub-text-1").textContent = "Circle of";
           document.getElementById("hub-text-2").textContent = "fifths";
