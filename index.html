@@ -379,7 +379,7 @@
   <div class="page">
 <div class="controls">
       <div class="grp">
-        <label>Griffe</label>
+        <label id="lbl-griffe">Griffe</label>
         <button class="active" id="btn-guitar">Gitarre</button>
         <button id="btn-piano">Klavier</button>
       </div>
@@ -387,7 +387,7 @@
         <button id="btn-leftie">Links-Händer</button>
       </div>
       <div class="grp">
-        <label>Modi-Schablone</label>
+        <label id="lbl-stencil">Modi-Schablone</label>
         <button id="btn-modes">einblenden</button>
       </div>
       <div class="grp" id="rotate-grp" style="display:none;">
@@ -395,7 +395,11 @@
         <span id="mode-key" style="font-size:13px; font-weight:500; min-width:90px; text-align:center;">Ion auf C</span>
         <button id="btn-cw" aria-label="im Uhrzeigersinn drehen">&#8635;</button>
       </div>
-      <div class="grp" style="margin-left:auto;">
+      <div class="grp" id="lang-grp" style="margin-left:auto;">
+        <button class="active" id="btn-lang-de">DE</button>
+        <button id="btn-lang-en">EN</button>
+      </div>
+      <div class="grp">
         <button id="btn-theme" aria-label="Dark/Light Mode umschalten">&#9790;</button>
       </div>
     </div>
@@ -423,12 +427,53 @@
       var svg = document.getElementById("cof-svg");
       var CX = 310, CY = 310;
 
+      var lang = "de";
+
       var MAJOR = ["C", "G", "D", "A", "E", "B", "F#", "C#", "G#", "D#", "A#", "F"];
-      var MAJOR_DISP = ["C", "G", "D", "A", "E", "H", "Fis", "Des", "As", "Es", "B", "F"];
+      var MAJOR_DISP_DE = ["C", "G", "D", "A", "E", "H", "Fis", "Des", "As", "Es", "B", "F"];
+      var MAJOR_DISP_EN = ["C", "G", "D", "A", "E", "B", "F#", "Db", "Ab", "Eb", "Bb", "F"];
+      var MAJOR_DISP = MAJOR_DISP_DE;
+
       var MINOR = ["Am", "Em", "Bm", "F#m", "C#m", "G#m", "D#m", "A#m", "Fm", "Cm", "Gm", "Dm"];
-      var MINOR_DISP = ["Am", "Em", "Hm", "Fism", "Cism", "Gism", "Dism", "Bm", "Fm", "Cm", "Gm", "Dm"];
+      var MINOR_DISP_DE = ["Am", "Em", "Hm", "Fism", "Cism", "Gism", "Dism", "Bm", "Fm", "Cm", "Gm", "Dm"];
+      var MINOR_DISP_EN = ["Am", "Em", "Bm", "F#m", "C#m", "G#m", "D#m", "Bbm", "Fm", "Cm", "Gm", "Dm"];
+      var MINOR_DISP = MINOR_DISP_DE;
+
       var DIM = ["Bdim", "F#dim", "C#dim", "G#dim", "D#dim", "A#dim", "Fdim", "Cdim", "Gdim", "Ddim", "Adim", "Edim"];
-      var DIM_DISP = ["H\u00b0", "Fis\u00b0", "Cis\u00b0", "Gis\u00b0", "Dis\u00b0", "Ais\u00b0", "F\u00b0", "C\u00b0", "G\u00b0", "D\u00b0", "A\u00b0", "E\u00b0"];
+      var DIM_DISP_DE = ["H\u00b0", "Fis\u00b0", "Cis\u00b0", "Gis\u00b0", "Dis\u00b0", "Ais\u00b0", "F\u00b0", "C\u00b0", "G\u00b0", "D\u00b0", "A\u00b0", "E\u00b0"];
+      var DIM_DISP_EN = ["B\u00b0", "F#\u00b0", "C#\u00b0", "G#\u00b0", "D#\u00b0", "A#\u00b0", "F\u00b0", "C\u00b0", "G\u00b0", "D\u00b0", "A\u00b0", "E\u00b0"];
+      var DIM_DISP = DIM_DISP_DE;
+
+      var SCALE_LABELS = {
+        de: {
+          ionian: "Ionisch (Dur)",
+          lydian: "Lydisch",
+          mixolydian: "Mixolydisch",
+          pentatonic: "Pentatonik Dur",
+          aeolian: "Äolisch (Moll)",
+          dorian: "Dorisch",
+          phrygian: "Phrygisch",
+          locrian: "Lokrisch",
+          pentatonic_m: "Pentatonik Moll",
+          harmonic: "Harmonisch",
+          melodic: "Melodisch",
+          blues: "Blues"
+        },
+        en: {
+          ionian: "Ionian (Major)",
+          lydian: "Lydian",
+          mixolydian: "Mixolydian",
+          pentatonic: "Major Pentatonic",
+          aeolian: "Aeolian (Minor)",
+          dorian: "Dorian",
+          phrygian: "Phrygian",
+          locrian: "Locrian",
+          pentatonic_m: "Minor Pentatonic",
+          harmonic: "Harmonic Minor",
+          melodic: "Melodic Minor",
+          blues: "Blues"
+        }
+      };
 
       var RING = { major: { r1: 60, r2: 128 }, minor: { r1: 128, r2: 196 }, dim: { r1: 196, r2: 264 } };
       // 12 pastel rainbow hues, evenly spaced (30° steps), starting at C=200° (blue-ish)
@@ -623,9 +668,9 @@
         cx: CX, cy: CY, r: RING.major.r1 - 2,
         fill: "var(--surface-2)", stroke: "var(--border)", "stroke-width": "1"
       }));
-      var h1 = mk("text", { x: CX, y: CY - 4, "text-anchor": "middle", "font-size": "13", fill: "var(--text-faint)" });
+      var h1 = mk("text", { id: "hub-text-1", x: CX, y: CY - 4, "text-anchor": "middle", "font-size": "13", fill: "var(--text-faint)" });
       h1.textContent = "Quinten"; svg.appendChild(h1);
-      var h2 = mk("text", { x: CX, y: CY + 14, "text-anchor": "middle", "font-size": "13", fill: "var(--text-faint)" });
+      var h2 = mk("text", { id: "hub-text-2", x: CX, y: CY + 14, "text-anchor": "middle", "font-size": "13", fill: "var(--text-faint)" });
       h2.textContent = "zirkel"; svg.appendChild(h2);
 
       // -- mode stencil ----------------------------------------------------
@@ -705,7 +750,7 @@
         }
 
         // string lines
-        var stringNames = ["E", "A", "D", "G", "H", "e"];
+        var stringNames = lang === "de" ? ["E", "A", "D", "G", "H", "e"] : ["E", "A", "D", "G", "B", "e"];
         for (var st = 0; st < nStrings; st++) {
           var sy = padT + st * stringH;
           var thick = st < 3 ? 2 : 1;
@@ -735,7 +780,9 @@
       // Roman numerals for 7 scale degrees
       var ROMAN = ["I","II","III","IV","V","VI","VII"];
       // Note names for display (prefer flats for black keys in scale context)
-      var NOTE_NAMES = ["C","C#","D","D#","E","F","F#","G","G#","A","A#","B"];
+      var NOTE_NAMES_DE = ["C", "Cis", "D", "Dis", "E", "F", "Fis", "G", "Gis", "A", "B", "H"];
+      var NOTE_NAMES_EN = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "Bb", "B"];
+      var NOTE_NAMES = NOTE_NAMES_DE;
 
       // Given a root pc and scale intervals, build diatonic triads.
       // For each scale degree, stack 3rds (skip one scale tone) to get triad.
@@ -802,11 +849,12 @@
         var root = chord.replace(/m$/, "");
         var rootPc = NOTE_IDX[root];
 
-        document.getElementById("scale-heading").textContent = disp + " — Tonleitern";
+        document.getElementById("scale-heading").textContent = disp + " — " + (lang === "de" ? "Tonleitern" : "Scales");
 
         var toggleEl = document.getElementById("scale-toggle");
         toggleEl.innerHTML = scaleDefs.map(function(def) {
-          return '<button class="scale-btn' + (scaleId === def.id ? ' active' : '') + '" data-scale="' + def.id + '">' + def.label + '</button>';
+          var label = SCALE_LABELS[lang][def.id] || def.label;
+          return '<button class="scale-btn' + (scaleId === def.id ? ' active' : '') + '" data-scale="' + def.id + '">' + label + '</button>';
         }).join("");
         toggleEl.querySelectorAll(".scale-btn").forEach(function(btn) {
           btn.addEventListener("click", function() {
@@ -832,7 +880,9 @@
         var chords = diatonicChords(rootPc, def.intervals);
         var chordsHtml = "";
         if (chords) {
-          var typeLabel = { major: "Dur", minor: "Moll", dim: "verm.", aug: "überm." };
+          var typeLabel = lang === "de"
+            ? { major: "Dur", minor: "Moll", dim: "verm.", aug: "überm." }
+            : { major: "Maj", minor: "Min", dim: "dim", aug: "aug" };
           chordsHtml = '<div class="diatonic-chords">' +
             chords.map(function(c) {
               var cls = c.chordType === "major" ? "dc-major"
@@ -862,8 +912,9 @@
       function updateStencil() {
         stencil.setAttribute("transform", "rotate(" + (rotation * 30) + " " + CX + " " + CY + ")");
         stencil.setAttribute("opacity", modesOn ? "1" : "0");
+        var prefix = lang === "de" ? "Ion auf " : "Ionian on ";
         document.getElementById("mode-key").textContent =
-          "Ion auf " + MAJOR_DISP[((rotation % 12) + 12) % 12];
+          prefix + MAJOR_DISP[((rotation % 12) + 12) % 12];
       }
 
       // -- guitar renderer with role colouring -----------------------------
@@ -971,6 +1022,105 @@
         return notes.map(function(n){ return n-shift; });
       }
 
+      // -- localization ----------------------------------------------------
+      function updateWheelText() {
+        var segs = svg.querySelectorAll(".seg-chord");
+        segs.forEach(function (g) {
+          var chord = g.getAttribute("data-chord");
+          var type = g.getAttribute("data-type");
+          var disp = "";
+
+          if (type === "major") {
+            var idx = MAJOR.indexOf(chord);
+            disp = MAJOR_DISP[idx];
+          } else if (type === "minor") {
+            var idx = MINOR.indexOf(chord);
+            disp = MINOR_DISP[idx];
+          } else if (type === "dim") {
+            var idx = DIM.indexOf(chord);
+            disp = DIM_DISP[idx];
+          }
+
+          g.setAttribute("data-disp", disp);
+          var txt = g.querySelector("text");
+          if (txt) {
+            txt.textContent = disp;
+          }
+        });
+      }
+
+      function updateUILabels() {
+        if (lang === "de") {
+          document.documentElement.lang = "de";
+          document.title = "Interaktiver Quintenzirkel mit Modi-Schablone";
+          document.getElementById("lbl-griffe").textContent = "Griffe";
+          document.getElementById("btn-guitar").textContent = "Gitarre";
+          document.getElementById("btn-piano").textContent = "Klavier";
+          document.getElementById("btn-leftie").textContent = "Links-Händer";
+          document.getElementById("lbl-stencil").textContent = "Modi-Schablone";
+          document.getElementById("btn-modes").textContent = modesOn ? "ausblenden" : "einblenden";
+          document.getElementById("btn-ccw").setAttribute("aria-label", "gegen Uhrzeigersinn drehen");
+          document.getElementById("btn-cw").setAttribute("aria-label", "im Uhrzeigersinn drehen");
+          document.getElementById("btn-theme").setAttribute("aria-label", "Dark/Light Mode umschalten");
+          document.getElementById("cof-svg").setAttribute("aria-label", "Quintenzirkel mit drehbarer Modi-Schablone");
+
+          document.getElementById("hub-text-1").textContent = "Quinten";
+          document.getElementById("hub-text-2").textContent = "zirkel";
+
+          if (!lastChordEl) {
+            document.getElementById("panel").textContent = "Noch kein Akkord gewählt — klicke auf ein Segment im Zirkel.";
+          }
+        } else {
+          document.documentElement.lang = "en";
+          document.title = "Interactive Circle of Fifths with Modes Template";
+          document.getElementById("lbl-griffe").textContent = "Voicings";
+          document.getElementById("btn-guitar").textContent = "Guitar";
+          document.getElementById("btn-piano").textContent = "Piano";
+          document.getElementById("btn-leftie").textContent = "Left-Handed";
+          document.getElementById("lbl-stencil").textContent = "Modes Template";
+          document.getElementById("btn-modes").textContent = modesOn ? "hide" : "show";
+          document.getElementById("btn-ccw").setAttribute("aria-label", "rotate counter-clockwise");
+          document.getElementById("btn-cw").setAttribute("aria-label", "rotate clockwise");
+          document.getElementById("btn-theme").setAttribute("aria-label", "toggle dark/light mode");
+          document.getElementById("cof-svg").setAttribute("aria-label", "Circle of fifths with rotatable modes template");
+
+          document.getElementById("hub-text-1").textContent = "Circle of";
+          document.getElementById("hub-text-2").textContent = "fifths";
+
+          if (!lastChordEl) {
+            document.getElementById("panel").textContent = "No chord selected — click a segment on the circle.";
+          }
+        }
+      }
+
+      function setLanguage(newLang) {
+        lang = newLang;
+        var bDe = document.getElementById("btn-lang-de");
+        var bEn = document.getElementById("btn-lang-en");
+        if (bDe) bDe.classList.toggle("active", lang === "de");
+        if (bEn) bEn.classList.toggle("active", lang === "en");
+
+        if (lang === "de") {
+          MAJOR_DISP = MAJOR_DISP_DE;
+          MINOR_DISP = MINOR_DISP_DE;
+          DIM_DISP = DIM_DISP_DE;
+          NOTE_NAMES = NOTE_NAMES_DE;
+        } else {
+          MAJOR_DISP = MAJOR_DISP_EN;
+          MINOR_DISP = MINOR_DISP_EN;
+          DIM_DISP = DIM_DISP_EN;
+          NOTE_NAMES = NOTE_NAMES_EN;
+        }
+
+        updateWheelText();
+        updateUILabels();
+        updateStencil();
+        if (lastChordEl) {
+          renderPanel();
+          renderScalePanel();
+        }
+      }
+
       // -- panel -----------------------------------------------------------
       function showChord(g) {
         lastChordEl = g;
@@ -993,17 +1143,21 @@
         panel.classList.remove("empty");
 
         var extOptions = type === "major"
-          ? [["triad","Dreiklang"],["maj7","maj7"]]
+          ? [["triad", lang === "de" ? "Dreiklang" : "Triad"],["maj7","maj7"]]
           : type === "minor"
-          ? [["triad","Dreiklang"],["m7","m7"]]
-          : [["triad","Dreiklang"],["m7b5","m7b5"]];
+          ? [["triad", lang === "de" ? "Dreiklang" : "Triad"],["m7","m7"]]
+          : [["triad", lang === "de" ? "Dreiklang" : "Triad"],["m7b5","m7b5"]];
 
         var toggleHtml = '<div class="ext-toggle">' +
           extOptions.map(function(opt) {
             return '<button data-ext="' + opt[0] + '" class="ext-btn' + (chordExt === opt[0] ? ' active' : '') + '">' + opt[1] + '</button>';
           }).join("") + '</div>';
 
-        var typeLabel = type === "major" ? "Durdreiklang" : type === "minor" ? "Molldreiklang" : "verminderter Dreiklang";
+        var typeLabel = type === "major"
+          ? (lang === "de" ? "Durdreiklang" : "Major Triad")
+          : type === "minor"
+          ? (lang === "de" ? "Molldreiklang" : "Minor Triad")
+          : (lang === "de" ? "verminderter Dreiklang" : "Diminished Triad");
 
         var body = "";
         if (instrument === "guitar") {
@@ -1023,10 +1177,14 @@
               '<button id="btn-next-v">&#8250;</button>' +
               '</div>'
             : '';
-          body = '<div class="voicing">' + (v ? renderGuitar(v, chord, type) : "<p style='font-size:13px;color:var(--text-soft)'>Kein Griff hinterlegt.</p>") + navHtml + '<div class="vlabel">Gitarrengriff</div></div>';
+          var missingText = lang === "de" ? "Kein Griff hinterlegt." : "No voicing available.";
+          var vlabel = lang === "de" ? "Gitarrengriff" : "Guitar Voicing";
+          body = '<div class="voicing">' + (v ? renderGuitar(v, chord, type) : "<p style='font-size:13px;color:var(--text-soft)'>" + missingText + "</p>") + navHtml + '<div class="vlabel">' + vlabel + '</div></div>';
         } else {
           var invCount = chordExt === "triad" ? 3 : 4;
-          var invLabels = ["Grundstellung","1. Umkehrung","2. Umkehrung","3. Umkehrung"];
+          var invLabels = lang === "de"
+            ? ["Grundstellung","1. Umkehrung","2. Umkehrung","3. Umkehrung"]
+            : ["Root Position","1st Inversion","2nd Inversion","3rd Inversion"];
           body = "";
           for (var ii = 0; ii < invCount; ii++) {
             var notes = pianoVoicing(root, type, ii, chordExt);
@@ -1035,17 +1193,20 @@
         }
 
         var septLegend = (chordExt !== "triad")
-          ? '<span><i class="dot" style="background:var(--seventh-col)"></i>Septime</span>'
+          ? '<span><i class="dot" style="background:var(--seventh-col)"></i>' + (lang === "de" ? "Septime" : "Seventh") + '</span>'
           : '';
         var legend = '<div class="legend">' +
-          '<span><i class="dot" style="background:var(--root-col)"></i>Grundton</span>' +
-          '<span><i class="dot" style="background:var(--third-col)"></i>Terz</span>' +
-          '<span><i class="dot" style="background:var(--fifth-col)"></i>Quinte</span>' +
+          '<span><i class="dot" style="background:var(--root-col)"></i>' + (lang === "de" ? "Grundton" : "Root") + '</span>' +
+          '<span><i class="dot" style="background:var(--third-col)"></i>' + (lang === "de" ? "Terz" : "Third") + '</span>' +
+          '<span><i class="dot" style="background:var(--fifth-col)"></i>' + (lang === "de" ? "Quinte" : "Fifth") + '</span>' +
           septLegend + '</div>';
 
+        var instrumentSub = instrument === "guitar"
+          ? (lang === "de" ? "Gitarrengriff" : "Guitar Voicing")
+          : (lang === "de" ? "Klaviergriffe" : "Piano Voicings");
+
         panel.innerHTML = '<h2>' + disp + '</h2>' + toggleHtml +
-          '<p class="sub">' + typeLabel + ' \u00b7 ' +
-          (instrument === "guitar" ? "Gitarrengriff" : "Klaviergriffe") + '</p>' +
+          '<p class="sub">' + typeLabel + ' \u00b7 ' + instrumentSub + '</p>' +
           '<div class="voicings">' + body + '</div>' + legend;
 
         panel.querySelectorAll(".ext-btn").forEach(function(btn) {
@@ -1071,6 +1232,17 @@
       }
 
       // -- controls --------------------------------------------------------
+      var bDe = document.getElementById("btn-lang-de");
+      var bEn = document.getElementById("btn-lang-en");
+      if (bDe) bDe.addEventListener("click", function () {
+        if (lang === "de") return;
+        setLanguage("de");
+      });
+      if (bEn) bEn.addEventListener("click", function () {
+        if (lang === "en") return;
+        setLanguage("en");
+      });
+
       var bG = document.getElementById("btn-guitar"), bP = document.getElementById("btn-piano"), bL = document.getElementById("btn-leftie"), lGrp = document.getElementById("leftie-grp");
       bG.addEventListener("click", function () {
         instrument = "guitar"; bG.classList.add("active"); bP.classList.remove("active");
@@ -1090,7 +1262,9 @@
       var bM = document.getElementById("btn-modes");
       bM.addEventListener("click", function () {
         modesOn = !modesOn;
-        bM.textContent = modesOn ? "ausblenden" : "einblenden";
+        bM.textContent = modesOn 
+          ? (lang === "de" ? "ausblenden" : "hide") 
+          : (lang === "de" ? "einblenden" : "show");
         bM.classList.toggle("active", modesOn);
         document.getElementById("rotate-grp").style.display = modesOn ? "flex" : "none";
         updateStencil();
@@ -1123,7 +1297,7 @@
         if (e.key === "ArrowLeft"  || e.key === "ArrowUp")   { rotation--; updateStencil(); e.preventDefault(); }
       });
 
-      updateStencil();
+      setLanguage("de");
     })();
   </script>
 </body>
